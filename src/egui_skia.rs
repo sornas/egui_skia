@@ -1,3 +1,4 @@
+use std::time::Duration;
 use egui::{Context, Pos2};
 use skia_safe::{Canvas, Surface, surfaces};
 
@@ -86,20 +87,21 @@ impl EguiSkia {
         &mut self,
         input: egui::RawInput,
         run_ui: impl FnMut(&Context),
-    ) -> egui::PlatformOutput {
+    ) -> (Option<Duration>, egui::PlatformOutput) {
         let egui::FullOutput {
             platform_output,
             textures_delta,
             shapes,
             pixels_per_point: _,
-            // TODO: How to handle multiple outputs
-            viewport_output: _
+            viewport_output
         } = self.egui_ctx.run(input, run_ui);
 
         self.shapes = shapes;
         self.textures_delta.append(textures_delta);
+        
+        let repaint_delay = viewport_output.get(&self.egui_ctx.viewport_id()).map(|vp| vp.repaint_delay);
 
-        platform_output
+        (repaint_delay, platform_output)
     }
 
     /// Paint the results of the last call to [`Self::run`].
